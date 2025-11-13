@@ -14,10 +14,12 @@ Get started in under 5 minutes!
 install.bat
 ```
 
-Then run:
-```bash
-fair-quick
+Then run (from the FAIR-Analysis directory):
+```cmd
+fair-quick.bat
 ```
+
+**Note:** Windows users should use the `.bat` wrapper scripts for best compatibility.
 
 ## 🚀 Alternative Methods
 
@@ -42,9 +44,21 @@ python quick_risk_analysis.py
 ## 📝 Your First Risk Analysis
 
 1. **Run the quick tool:**
+
+   **Windows:**
+   ```cmd
+   cd path\to\FAIR-Analysis
+   fair-quick.bat
+   ```
+
+   **Linux/macOS:**
    ```bash
    fair-quick
-   # or: python quick_risk_analysis.py
+   ```
+
+   **Or use Python directly (all platforms):**
+   ```bash
+   python quick_risk_analysis.py
    ```
 
 2. **Answer the prompts:**
@@ -175,9 +189,23 @@ docker-compose build --no-cache
 
 ## ❓ Quick Troubleshooting
 
-### "Command not found" after install
+### "Command not found" on Windows
+**Solution:** Use the `.bat` wrapper scripts:
+```cmd
+cd path\to\FAIR-Analysis
+fair-quick.bat
+```
+
+Or use Python directly:
+```cmd
+python quick_risk_analysis.py
+```
+
+**For PATH setup, see:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
+### "Command not found" on Linux/macOS
 ```bash
-# Add to PATH
+# Add to PATH (add to ~/.bashrc or ~/.zshrc for permanent)
 export PATH="$HOME/.local/bin:$PATH"
 ```
 

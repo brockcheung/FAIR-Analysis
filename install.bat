@@ -61,10 +61,35 @@ if %errorlevel% neq 0 goto install_error
 echo.
 echo [OK] Installation complete!
 echo.
-echo You can now run:
-echo   fair-quick    # Quick analysis tool
-echo   fair-calc     # Full calculator
-echo   fair-app      # Web application
+echo ================================================================
+echo              IMPORTANT: How to Run the Tools
+echo ================================================================
+echo.
+echo OPTION 1 (Recommended - Works Immediately):
+echo   Use the .bat wrapper scripts in this directory:
+echo     fair-quick.bat    # Quick analysis tool
+echo     fair-calc.bat     # Full calculator
+echo     fair-app.bat      # Web application
+echo.
+echo   From this directory, just run:
+echo     fair-quick.bat
+echo.
+echo OPTION 2 (Direct Python - Always Works):
+echo     python quick_risk_analysis.py
+echo     python fair_risk_calculator.py
+echo     streamlit run fair_risk_app.py
+echo.
+echo OPTION 3 (Commands Anywhere - Requires PATH Setup):
+echo   If you want to use 'fair-quick' from anywhere, add this to PATH:
+echo     %%APPDATA%%\Python\Python%PYTHON_VERSION:~0,2%\Scripts
+echo.
+echo   To add to PATH permanently:
+echo   1. Press Win+R, type: sysdm.cpl
+echo   2. Go to Advanced tab ^> Environment Variables
+echo   3. Under User Variables, select Path ^> Edit
+echo   4. Click New and add: %%APPDATA%%\Python\Python%PYTHON_VERSION:~0,2%\Scripts
+echo   5. Click OK on all windows
+echo   6. Restart Command Prompt/PowerShell
 echo.
 goto end
 
@@ -80,10 +105,28 @@ if %errorlevel% neq 0 goto install_error
 echo.
 echo [OK] Installation complete!
 echo.
-echo You can now run:
-echo   fair-quick    # Quick analysis tool
-echo   fair-calc     # Full calculator
-echo   fair-app      # Web application
+echo ================================================================
+echo              IMPORTANT: How to Run the Tools
+echo ================================================================
+echo.
+echo OPTION 1 (Recommended - Works Immediately):
+echo   Use the .bat wrapper scripts in this directory:
+echo     fair-quick.bat    # Quick analysis tool
+echo     fair-calc.bat     # Full calculator
+echo     fair-app.bat      # Web application
+echo.
+echo   From this directory, just run:
+echo     fair-quick.bat
+echo.
+echo OPTION 2 (Direct Python - Always Works):
+echo     python quick_risk_analysis.py
+echo     python fair_risk_calculator.py
+echo     streamlit run fair_risk_app.py
+echo.
+echo OPTION 3 (Commands Anywhere - May Already Work):
+echo   System-wide install usually adds Scripts to PATH automatically.
+echo   Try running: fair-quick
+echo   If it doesn't work, check if Python\Scripts is in your PATH.
 echo.
 goto end
 
@@ -154,11 +197,17 @@ echo ================================================================
 echo              Installation Complete!
 echo ================================================================
 echo.
-echo Quick Start:
-echo   1. Try quick analysis:  fair-quick
-echo   2. Run web app:         fair-app
-echo   3. Full calculator:     fair-calc
+echo QUICK START (From this directory):
+echo   1. Quick analysis:   fair-quick.bat
+echo   2. Web app:          fair-app.bat
+echo   3. Full calculator:  fair-calc.bat
 echo.
-echo For help, run any command with --help
+echo OR use Python directly:
+echo   python quick_risk_analysis.py
+echo.
+echo TROUBLESHOOTING:
+echo   - If commands don't work, use the .bat files
+echo   - See TROUBLESHOOTING.md for PATH setup
+echo   - Run test_validation.py to verify installation
 echo.
 pause

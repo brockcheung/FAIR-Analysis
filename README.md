@@ -37,12 +37,34 @@ docker-compose up
 
 See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
+### 🪟 Windows Users - Important!
+
+After installation, use the `.bat` wrapper scripts that work immediately:
+```cmd
+fair-quick.bat    # Quick analysis
+fair-calc.bat     # Full calculator
+fair-app.bat      # Web application
+```
+
+Or use Python directly:
+```cmd
+python quick_risk_analysis.py
+```
+
+**Commands not recognized?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for solutions.
+
 ## ⚡ Quick Start - Analyze Your Risk in 60 Seconds
 
 After installation, run:
 ```bash
+# Windows (from FAIR-Analysis directory)
+fair-quick.bat
+
+# Linux/macOS
 fair-quick
-# Or: python quick_risk_analysis.py
+
+# Or use Python directly (all platforms)
+python quick_risk_analysis.py
 ```
 
 That's it! The tool will guide you through creating your scenario and show results immediately.

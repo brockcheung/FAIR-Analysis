@@ -80,3 +80,7 @@ exports/
 *.swp
 *~.nib
 .nfs*
+
+# Integrity protection (generated locally, should not be committed)
+integrity_manifest.json
+integrity_verification_report.json

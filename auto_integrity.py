@@ -158,31 +158,37 @@ class AutoIntegrity:
         success, message = self.verify_integrity()
 
         if not success:
-            print("\n" + "="*70)
-            print("⚠️  SECURITY ALERT: CODE TAMPERING DETECTED!")
-            print("="*70)
-            print(f"Details: {message}")
-            print("\nThe FAIR Risk Calculator has been modified since the baseline")
-            print("was established. This could indicate:")
-            print("  • Malicious tampering by an adversary")
-            print("  • Accidental modification")
-            print("  • Legitimate update without regenerating baseline")
-            print("\nRecommended actions:")
-            print("  1. If you made legitimate changes:")
-            print("     python generate_integrity_manifest.py")
-            print("  2. If you did NOT make changes:")
-            print("     Restore from backup and investigate")
-            print("  3. For more details:")
-            print("     python verify_integrity.py --verbose")
-            print("="*70 + "\n")
+            # Always show alert if not in silent mode
+            if not self.silent:
+                print("\n" + "="*70)
+                print("⚠️  SECURITY ALERT: CODE TAMPERING DETECTED!")
+                print("="*70)
+                print(f"Details: {message}")
+                print("\nThe FAIR Risk Calculator has been modified since the baseline")
+                print("was established. This could indicate:")
+                print("  • Malicious tampering by an adversary")
+                print("  • Accidental modification")
+                print("  • Legitimate update without regenerating baseline")
+                print("\nRecommended actions:")
+                print("  1. If you made legitimate changes:")
+                print("     python generate_integrity_manifest.py")
+                print("  2. If you did NOT make changes:")
+                print("     Restore from backup and investigate")
+                print("  3. For more details:")
+                print("     python verify_integrity.py --verbose")
+                print("="*70 + "\n")
 
             if self.strict:
-                print("❌ STRICT MODE: Exiting due to integrity failure")
+                if not self.silent:
+                    print("❌ STRICT MODE: Exiting due to integrity failure")
                 return False
             else:
-                print("⚠️  WARNING MODE: Continuing despite integrity failure")
-                print("   (Results may not be trustworthy)")
-                return True
+                if not self.silent:
+                    print("⚠️  WARNING MODE: Continuing despite integrity failure")
+                    print("   (Results may not be trustworthy)")
+                # Return False to indicate tampering detected, even in warning mode
+                # The caller can decide whether to continue or not
+                return False
 
         return True
 

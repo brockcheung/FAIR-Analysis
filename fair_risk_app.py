@@ -255,24 +255,55 @@ def main():
                 submitted = st.form_submit_button("Add Scenario", type="primary")
                 
                 if submitted:
-                    if scenario_name:
-                        new_scenario = {
-                            'id': scenario_id,
-                            'name': scenario_name,
-                            'tef': {'low': tef_low, 'medium': tef_medium, 'high': tef_high},
-                            'vuln': {'low': vuln_low, 'medium': vuln_medium, 'high': vuln_high},
-                            'loss': {'low': loss_low, 'medium': loss_medium, 'high': loss_high},
-                            'asset': asset,
-                            'threat': threat,
-                            'effect': effect,
-                            'notes': notes
-                        }
-                        st.session_state.scenarios.append(new_scenario)
-                        st.session_state.current_scenario_id += 1
-                        st.success(f"Scenario '{scenario_name}' added successfully!")
-                        st.rerun()
-                    else:
+                    if not scenario_name:
                         st.error("Please provide a scenario name")
+                    else:
+                        # Validate input values
+                        validation_errors = []
+
+                        # Validate TEF (Threat Event Frequency)
+                        if not (tef_low <= tef_medium <= tef_high):
+                            validation_errors.append(
+                                f"⚠️ **TEF Error:** Values must be in ascending order (Low ≤ Medium ≤ High). "
+                                f"Got: Low={tef_low}, Medium={tef_medium}, High={tef_high}"
+                            )
+
+                        # Validate Vulnerability
+                        if not (vuln_low <= vuln_medium <= vuln_high):
+                            validation_errors.append(
+                                f"⚠️ **Vulnerability Error:** Values must be in ascending order (Low ≤ Medium ≤ High). "
+                                f"Got: Low={vuln_low:.2f}, Medium={vuln_medium:.2f}, High={vuln_high:.2f}"
+                            )
+
+                        # Validate Loss Magnitude
+                        if not (loss_low <= loss_medium <= loss_high):
+                            validation_errors.append(
+                                f"⚠️ **Loss Magnitude Error:** Values must be in ascending order (Low ≤ Medium ≤ High). "
+                                f"Got: Low=${loss_low:,.0f}, Medium=${loss_medium:,.0f}, High=${loss_high:,.0f}"
+                            )
+
+                        # Display validation errors or add scenario
+                        if validation_errors:
+                            st.error("**Input Validation Failed:**")
+                            for error in validation_errors:
+                                st.markdown(error)
+                            st.info("💡 **Tip:** Ensure that Low ≤ Medium ≤ High for all three parameters (TEF, Vulnerability, Loss Magnitude)")
+                        else:
+                            new_scenario = {
+                                'id': scenario_id,
+                                'name': scenario_name,
+                                'tef': {'low': tef_low, 'medium': tef_medium, 'high': tef_high},
+                                'vuln': {'low': vuln_low, 'medium': vuln_medium, 'high': vuln_high},
+                                'loss': {'low': loss_low, 'medium': loss_medium, 'high': loss_high},
+                                'asset': asset,
+                                'threat': threat,
+                                'effect': effect,
+                                'notes': notes
+                            }
+                            st.session_state.scenarios.append(new_scenario)
+                            st.session_state.current_scenario_id += 1
+                            st.success(f"✅ Scenario '{scenario_name}' added successfully!")
+                            st.rerun()
         
         with col2:
             st.subheader("Current Scenarios")

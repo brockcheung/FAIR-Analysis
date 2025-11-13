@@ -170,13 +170,68 @@ def main():
     loss['low'] = float(input("Loss - Low estimate ($) [default: 500000]: ").strip() or "500000")
     loss['medium'] = float(input("Loss - Most likely ($) [default: 2080000]: ").strip() or "2080000")
     loss['high'] = float(input("Loss - High estimate ($) [default: 3500000]: ").strip() or "3500000")
-    
+
+    # Validate input values
+    print("\n" + "="*60)
+    print("VALIDATING INPUTS...")
+    print("="*60)
+
+    validation_errors = []
+
+    # Validate TEF (Threat Event Frequency)
+    if not (tef['low'] <= tef['medium'] <= tef['high']):
+        validation_errors.append(
+            f"❌ TEF Error: Values must be in ascending order (Low ≤ Medium ≤ High)\n"
+            f"   Got: Low={tef['low']}, Medium={tef['medium']}, High={tef['high']}"
+        )
+
+    # Validate Vulnerability
+    if not (vuln['low'] <= vuln['medium'] <= vuln['high']):
+        validation_errors.append(
+            f"❌ Vulnerability Error: Values must be in ascending order (Low ≤ Medium ≤ High)\n"
+            f"   Got: Low={vuln['low']:.2f}, Medium={vuln['medium']:.2f}, High={vuln['high']:.2f}"
+        )
+
+    # Validate vulnerability range (0-1)
+    if not (0 <= vuln['low'] <= 1 and 0 <= vuln['medium'] <= 1 and 0 <= vuln['high'] <= 1):
+        validation_errors.append(
+            f"❌ Vulnerability Error: Values must be between 0 and 1\n"
+            f"   Got: Low={vuln['low']:.2f}, Medium={vuln['medium']:.2f}, High={vuln['high']:.2f}"
+        )
+
+    # Validate Loss Magnitude
+    if not (loss['low'] <= loss['medium'] <= loss['high']):
+        validation_errors.append(
+            f"❌ Loss Magnitude Error: Values must be in ascending order (Low ≤ Medium ≤ High)\n"
+            f"   Got: Low=${loss['low']:,.0f}, Medium=${loss['medium']:,.0f}, High=${loss['high']:,.0f}"
+        )
+
+    # Validate non-negative values
+    if tef['low'] < 0 or tef['medium'] < 0 or tef['high'] < 0:
+        validation_errors.append("❌ TEF Error: Values cannot be negative")
+
+    if loss['low'] < 0 or loss['medium'] < 0 or loss['high'] < 0:
+        validation_errors.append("❌ Loss Magnitude Error: Values cannot be negative")
+
+    # Display validation results
+    if validation_errors:
+        print("\n⚠️  INPUT VALIDATION FAILED:")
+        print("="*60)
+        for error in validation_errors:
+            print(error)
+        print("\n💡 Tip: Ensure that Low ≤ Medium ≤ High for all parameters")
+        print("         (TEF, Vulnerability, and Loss Magnitude)")
+        print("="*60)
+        sys.exit(1)
+    else:
+        print("✅ All inputs validated successfully!")
+
     # Ask for iterations
     iterations_input = input("\nNumber of simulations [default: 10000]: ").strip()
     iterations = int(iterations_input) if iterations_input else 10000
-    
+
     print(f"\n🎲 Running {iterations:,} Monte Carlo simulations...")
-    
+
     # Run analysis
     analyzer = QuickRiskAnalyzer()
     results = analyzer.analyze_risk(tef, vuln, loss, iterations)

@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 """
 Test script for FAIR Risk Calculator input validation
+
+This tests the validation logic in fair_risk_calculator.py.
+The same validation is implemented in:
+- fair_risk_calculator.py (command-line full calculator)
+- fair_risk_app.py (Streamlit web application)
+- quick_risk_analysis.py (quick command-line tool)
+
+All three tools validate that Low ≤ Medium ≤ High for:
+- Threat Event Frequency (TEF)
+- Vulnerability (0-1 range)
+- Loss Magnitude ($)
 """
 
 from fair_risk_calculator import FAIRRiskCalculator

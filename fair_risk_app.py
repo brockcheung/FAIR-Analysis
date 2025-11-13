@@ -47,15 +47,38 @@ if AUTO_INTEGRITY_AVAILABLE:
 
         # Show result in sidebar
         if not integrity_result:
-            st.sidebar.error("⚠️ Code Integrity Check Failed")
-            st.sidebar.warning("Results may not be trustworthy. See SECURITY.md")
+            # Tampering detected
+            with st.sidebar:
+                st.error("🚨 SECURITY ALERT")
+                st.error("Code Tampering Detected!")
+                st.warning("⚠️ The FAIR Risk Calculator code has been modified since the security baseline was established.")
+                with st.expander("⚠️ See Details & Recommended Actions"):
+                    st.markdown("""
+**This could indicate:**
+- Malicious tampering by an adversary
+- Accidental modification
+- Legitimate update without regenerating baseline
+
+**Recommended actions:**
+
+1. **If you made legitimate changes**, regenerate the baseline:
+   ```bash
+   python generate_integrity_manifest.py
+   ```
+
+2. **If you did NOT make changes**, restore from backup and investigate immediately
+
+3. **For detailed information**:
+   ```bash
+   python verify_integrity.py --verbose
+   ```
+
+**⚠️ WARNING: Results may not be trustworthy!**
+""")
         else:
-            # Check if manifest was just generated (first run)
-            manifest_path = os.path.join(os.path.dirname(__file__), 'integrity_manifest.json')
-            if os.path.exists(manifest_path):
-                # Show success indicator in sidebar
-                with st.sidebar:
-                    st.success("🔒 Code Integrity: Verified")
+            # Integrity verified
+            with st.sidebar:
+                st.success("🔒 Code Integrity: Verified")
 else:
     # Integrity system not available
     if 'integrity_checked' not in st.session_state:

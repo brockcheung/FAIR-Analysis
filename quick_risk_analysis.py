@@ -11,36 +11,78 @@ from datetime import datetime
 import sys
 
 class QuickRiskAnalyzer:
-    """Simplified risk analyzer for quick assessments"""
-    
+    """
+    Simplified risk analyzer for quick FAIR assessments
+
+    Implements the FAIR model: Risk = LEF × LM
+    Where LEF (Loss Event Frequency) = TEF × Vulnerability
+    """
+
     @staticmethod
     def pert_distribution(low, medium, high, size=10000):
-        """Generate PERT distribution samples"""
+        """
+        Generate PERT distribution samples
+
+        PERT distribution is a special case of Beta distribution commonly used in risk analysis.
+
+        Args:
+            low: Minimum value
+            medium: Most likely value (mode)
+            high: Maximum value
+            size: Number of samples
+
+        Returns:
+            NumPy array of samples
+
+        Raises:
+            ValueError: If medium is not between low and high
+        """
+        # Validate inputs
+        if not (low <= medium <= high):
+            raise ValueError(
+                f"PERT distribution requires low ≤ medium ≤ high. "
+                f"Got: low={low}, medium={medium}, high={high}"
+            )
+
+        # Handle degenerate case
         if high == low:
             return np.full(size, medium)
-        
-        lambda_param = 4
+
+        # PERT parameters
+        lambda_param = 4  # Shape parameter for moderate confidence
         alpha = 1 + lambda_param * (medium - low) / (high - low)
         beta = 1 + lambda_param * (high - medium) / (high - low)
-        
+
+        # Generate and scale Beta distribution
         samples = np.random.beta(alpha, beta, size)
         return low + samples * (high - low)
-    
+
     @staticmethod
-    def analyze_risk(tef, vuln, loss, iterations=10000):
+    def analyze_risk(tef, vuln, loss, iterations=10000, random_seed=None):
         """
-        Quick risk analysis
-        
+        Quick FAIR risk analysis using Monte Carlo simulation
+
+        Implements: ALE = TEF × Vulnerability × Loss Magnitude
+
         Args:
-            tef: dict with 'low', 'medium', 'high' for Threat Event Frequency
-            vuln: dict with 'low', 'medium', 'high' for Vulnerability (0-1)
+            tef: dict with 'low', 'medium', 'high' for Threat Event Frequency (events/year)
+            vuln: dict with 'low', 'medium', 'high' for Vulnerability (probability 0-1)
             loss: dict with 'low', 'medium', 'high' for Loss Magnitude ($)
-            iterations: number of simulation iterations
-        
+            iterations: number of simulation iterations (default: 10000)
+            random_seed: optional random seed for reproducibility
+
         Returns:
-            Dictionary with risk metrics
+            Dictionary with comprehensive risk metrics including:
+                - mean, median: central tendency
+                - p90, var95, cvar95: tail risk metrics
+                - prob_1m, prob_5m: threshold probabilities
+                - samples: full ALE distribution
         """
-        # Run Monte Carlo simulation
+        # Set random seed if provided for reproducibility
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
+        # Run Monte Carlo simulation using PERT distributions
         tef_samples = QuickRiskAnalyzer.pert_distribution(
             tef['low'], tef['medium'], tef['high'], iterations
         )
@@ -50,17 +92,22 @@ class QuickRiskAnalyzer:
         loss_samples = QuickRiskAnalyzer.pert_distribution(
             loss['low'], loss['medium'], loss['high'], iterations
         )
-        
-        # Calculate Annual Loss Expectancy
+
+        # Calculate Annual Loss Expectancy (FAIR model)
+        # ALE = TEF × Vulnerability × Loss Magnitude
         ale_samples = tef_samples * vuln_samples * loss_samples
-        
-        # Calculate statistics
+
+        # Calculate VaR once to avoid redundant computation
+        var95_value = np.percentile(ale_samples, 95)
+
+        # Calculate comprehensive statistics
         return {
             'mean': np.mean(ale_samples),
             'median': np.median(ale_samples),
+            'std': np.std(ale_samples, ddof=1),  # Sample std dev
             'p90': np.percentile(ale_samples, 90),
-            'var95': np.percentile(ale_samples, 95),
-            'cvar95': np.mean(ale_samples[ale_samples >= np.percentile(ale_samples, 95)]),
+            'var95': var95_value,  # Value at Risk (95%)
+            'cvar95': np.mean(ale_samples[ale_samples >= var95_value]),  # Conditional VaR
             'prob_1m': np.sum(ale_samples > 1000000) / len(ale_samples),
             'prob_5m': np.sum(ale_samples > 5000000) / len(ale_samples),
             'samples': ale_samples

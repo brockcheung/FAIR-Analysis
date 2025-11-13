@@ -20,16 +20,26 @@ class FAIRRiskCalculator:
     Automated FAIR risk calculation with Monte Carlo simulation
     """
     
-    def __init__(self, iterations: int = 10000):
+    def __init__(self, iterations: int = 10000, random_seed: Optional[int] = None):
         """
         Initialize the risk calculator
-        
+
         Args:
             iterations: Number of Monte Carlo simulation iterations (default: 10000)
+            random_seed: Optional random seed for reproducibility (default: None)
         """
+        if iterations < 1000:
+            raise ValueError("Iterations must be at least 1000 for statistical reliability")
+        if iterations > 1000000:
+            raise ValueError("Iterations cannot exceed 1,000,000 (memory/performance constraints)")
+
         self.iterations = iterations
         self.scenarios = []
         self.simulation_results = {}
+
+        # Set random seed for reproducibility if provided
+        if random_seed is not None:
+            np.random.seed(random_seed)
         
     def add_scenario(self,
                     scenario_id: str,
@@ -130,64 +140,107 @@ class FAIRRiskCalculator:
         """
         Generate PERT distribution values
         PERT (Program Evaluation and Review Technique) distribution is commonly used in risk analysis
-        
+
+        Uses a Beta distribution with shape parameters derived from low, medium (mode), and high values.
+        The PERT distribution is a special case of the Beta distribution scaled to [low, high]
+        with the mode at 'medium'.
+
         Args:
-            low: Minimum value
-            medium: Most likely value
-            high: Maximum value
+            low: Minimum value (must be ≤ medium)
+            medium: Most likely value (mode) (must be in [low, high])
+            high: Maximum value (must be ≥ medium)
             size: Number of samples to generate
-            
+
         Returns:
-            Array of sampled values
+            Array of sampled values following PERT distribution
+
+        Raises:
+            ValueError: If medium is not between low and high
         """
-        # PERT uses a modified beta distribution
-        # Shape parameter (lambda) typically 4 for moderate confidence
-        lambda_param = 4
-        
-        # Calculate alpha and beta parameters
-        mean = (low + lambda_param * medium + high) / (lambda_param + 2)
-        
+        # Validate that medium is between low and high
+        # This validation is critical for proper Beta distribution parameters
+        if not (low <= medium <= high):
+            raise ValueError(
+                f"PERT distribution requires low ≤ medium ≤ high. "
+                f"Got: low={low}, medium={medium}, high={high}"
+            )
+
+        # Handle degenerate case where all values are equal
         if high == low:
             return np.full(size, medium)
-            
-        # Mode-adjusted parameters
+
+        # PERT uses a modified beta distribution
+        # Shape parameter (lambda) typically 4 for moderate confidence
+        # This represents moderate uncertainty around the most likely value
+        lambda_param = 4
+
+        # Calculate alpha and beta parameters for Beta distribution
+        # These formulas ensure the mode of the scaled Beta distribution equals 'medium'
+        # Alpha and beta are always ≥ 1 when low ≤ medium ≤ high
         alpha = 1 + lambda_param * (medium - low) / (high - low)
         beta = 1 + lambda_param * (high - medium) / (high - low)
-        
-        # Generate beta distribution and scale to desired range
+
+        # Generate beta distribution samples in [0, 1] and scale to [low, high]
         samples = np.random.beta(alpha, beta, size)
         return low + samples * (high - low)
     
-    def _uniform_distribution(self, low: float, high: float, size: int) -> np.ndarray:
+    def _triangular_distribution(self, low: float, medium: float, high: float, size: int) -> np.ndarray:
         """
-        Generate uniform distribution values (simpler alternative to PERT)
-        
+        Generate triangular distribution values (simpler alternative to PERT)
+
+        The triangular distribution is a continuous probability distribution with lower limit 'low',
+        upper limit 'high', and mode (peak) at 'medium'. It's simpler than PERT but still
+        uses all three parameters.
+
         Args:
             low: Minimum value
+            medium: Most likely value (mode/peak of distribution)
             high: Maximum value
             size: Number of samples
-            
+
         Returns:
-            Array of sampled values
+            Array of sampled values following triangular distribution
+
+        Raises:
+            ValueError: If medium is not between low and high
         """
-        return np.random.uniform(low, high, size)
+        # Validate that medium is between low and high
+        if not (low <= medium <= high):
+            raise ValueError(
+                f"Triangular distribution requires low ≤ medium ≤ high. "
+                f"Got: low={low}, medium={medium}, high={high}"
+            )
+
+        return np.random.triangular(low, medium, high, size)
     
     def run_simulation(self, scenario_id: str, distribution: str = 'pert') -> Dict:
         """
         Run Monte Carlo simulation for a specific scenario
-        
+
+        This implements the FAIR model: Risk = LEF × LM
+        Where LEF (Loss Event Frequency) = TEF × Vulnerability
+
         Args:
             scenario_id: ID of the scenario to simulate
-            distribution: Type of distribution ('pert' or 'uniform')
-            
+            distribution: Type of distribution ('pert' or 'triangular', default: 'pert')
+                         'pert' = PERT distribution (recommended for most cases)
+                         'triangular' = Triangular distribution (simpler alternative)
+
         Returns:
-            Dictionary containing simulation results
+            Dictionary containing simulation results including ALE samples and statistics
+
+        Raises:
+            ValueError: If scenario_id not found or distribution type invalid
         """
         # Find the scenario
         scenario = next((s for s in self.scenarios if s['id'] == scenario_id), None)
         if not scenario:
             raise ValueError(f"Scenario {scenario_id} not found")
-        
+
+        # Validate distribution type
+        if distribution not in ['pert', 'triangular']:
+            raise ValueError(f"Invalid distribution type '{distribution}'. Must be 'pert' or 'triangular'")
+
         # Generate random samples based on distribution type
         if distribution == 'pert':
             tef_samples = self._pert_distribution(
@@ -196,44 +249,57 @@ class FAIRRiskCalculator:
                 scenario['tef']['high'],
                 self.iterations
             )
-            
+
             vuln_samples = self._pert_distribution(
                 scenario['vulnerability']['low'],
                 scenario['vulnerability']['medium'],
                 scenario['vulnerability']['high'],
                 self.iterations
             )
-            
+
             loss_samples = self._pert_distribution(
                 scenario['loss_magnitude']['low'],
                 scenario['loss_magnitude']['medium'],
                 scenario['loss_magnitude']['high'],
                 self.iterations
             )
-        else:  # uniform distribution
-            tef_samples = self._uniform_distribution(
+        else:  # triangular distribution
+            tef_samples = self._triangular_distribution(
                 scenario['tef']['low'],
+                scenario['tef']['medium'],
                 scenario['tef']['high'],
                 self.iterations
             )
-            
-            vuln_samples = self._uniform_distribution(
+
+            vuln_samples = self._triangular_distribution(
                 scenario['vulnerability']['low'],
+                scenario['vulnerability']['medium'],
                 scenario['vulnerability']['high'],
                 self.iterations
             )
-            
-            loss_samples = self._uniform_distribution(
+
+            loss_samples = self._triangular_distribution(
                 scenario['loss_magnitude']['low'],
+                scenario['loss_magnitude']['medium'],
                 scenario['loss_magnitude']['high'],
                 self.iterations
             )
         
         # Calculate Loss Event Frequency (LEF) and Annual Loss Expectancy (ALE)
+        # This is the core FAIR calculation: ALE = TEF × Vulnerability × Loss Magnitude
         lef_samples = tef_samples * vuln_samples
         ale_samples = lef_samples * loss_samples
-        
-        # Calculate statistics
+
+        # Calculate Value at Risk (VaR) once to avoid redundant computation
+        # VaR at 95% confidence: the loss value that will not be exceeded with 95% probability
+        var_95_value = np.percentile(ale_samples, 95)
+
+        # Calculate Conditional Value at Risk (CVaR), also known as Expected Shortfall
+        # CVaR at 95%: the expected loss given that losses exceed the 95th percentile
+        # This represents the average of the worst 5% of outcomes
+        cvar_95_value = np.mean(ale_samples[ale_samples >= var_95_value])
+
+        # Calculate comprehensive statistics
         results = {
             'scenario_id': scenario_id,
             'description': scenario['description'],
@@ -245,27 +311,37 @@ class FAIRRiskCalculator:
             'lef_samples': lef_samples,
             'ale_samples': ale_samples,
             'statistics': {
+                # Central tendency measures
                 'mean_loss': np.mean(ale_samples),
                 'median_loss': np.median(ale_samples),
-                'std_loss': np.std(ale_samples),
+
+                # Dispersion measures
+                # Using ddof=1 for sample standard deviation (unbiased estimator)
+                'std_loss': np.std(ale_samples, ddof=1),
                 'min_loss': np.min(ale_samples),
                 'max_loss': np.max(ale_samples),
+
+                # Percentiles for understanding the distribution shape
                 'percentile_10': np.percentile(ale_samples, 10),
                 'percentile_25': np.percentile(ale_samples, 25),
-                'percentile_50': np.percentile(ale_samples, 50),
+                'percentile_50': np.percentile(ale_samples, 50),  # Same as median
                 'percentile_75': np.percentile(ale_samples, 75),
                 'percentile_90': np.percentile(ale_samples, 90),
                 'percentile_95': np.percentile(ale_samples, 95),
                 'percentile_99': np.percentile(ale_samples, 99),
-                'var_95': np.percentile(ale_samples, 95),  # Value at Risk (95%)
-                'cvar_95': np.mean(ale_samples[ale_samples >= np.percentile(ale_samples, 95)]),  # Conditional VaR
+
+                # Risk metrics
+                'var_95': var_95_value,  # Value at Risk (95% confidence)
+                'cvar_95': cvar_95_value,  # Conditional VaR / Expected Shortfall
+
+                # Probability metrics for decision-making thresholds
                 'probability_zero_loss': np.sum(ale_samples == 0) / len(ale_samples),
                 'probability_over_1m': np.sum(ale_samples > 1000000) / len(ale_samples),
                 'probability_over_5m': np.sum(ale_samples > 5000000) / len(ale_samples),
                 'probability_over_10m': np.sum(ale_samples > 10000000) / len(ale_samples),
             }
         }
-        
+
         self.simulation_results[scenario_id] = results
         return results
     

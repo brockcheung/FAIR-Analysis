@@ -47,30 +47,94 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 class FAIRCalculator:
-    """Streamlit-compatible FAIR risk calculator"""
-    
+    """
+    Streamlit-compatible FAIR risk calculator
+
+    Implements the FAIR model: Risk = LEF × LM
+    Where LEF (Loss Event Frequency) = TEF × Vulnerability
+    """
+
     @staticmethod
     def pert_distribution(low, medium, high, size=10000):
-        """Generate PERT distribution samples"""
+        """
+        Generate PERT distribution samples
+
+        Args:
+            low: Minimum value
+            medium: Most likely value (mode)
+            high: Maximum value
+            size: Number of samples
+
+        Returns:
+            NumPy array of samples
+
+        Raises:
+            ValueError: If medium is not between low and high
+        """
+        # Validate inputs
+        if not (low <= medium <= high):
+            raise ValueError(
+                f"PERT distribution requires low ≤ medium ≤ high. "
+                f"Got: low={low}, medium={medium}, high={high}"
+            )
+
+        # Handle degenerate case
         if high == low:
             return np.full(size, medium)
-        
-        lambda_param = 4
+
+        # PERT parameters
+        lambda_param = 4  # Shape parameter for moderate confidence
         alpha = 1 + lambda_param * (medium - low) / (high - low)
         beta = 1 + lambda_param * (high - medium) / (high - low)
-        
+
+        # Generate and scale Beta distribution
         samples = np.random.beta(alpha, beta, size)
         return low + samples * (high - low)
-    
+
     @staticmethod
-    def uniform_distribution(low, high, size=10000):
-        """Generate uniform distribution samples"""
-        return np.random.uniform(low, high, size)
-    
+    def triangular_distribution(low, medium, high, size=10000):
+        """
+        Generate triangular distribution samples (simpler alternative to PERT)
+
+        Args:
+            low: Minimum value
+            medium: Most likely value (mode/peak)
+            high: Maximum value
+            size: Number of samples
+
+        Returns:
+            NumPy array of samples
+
+        Raises:
+            ValueError: If medium is not between low and high
+        """
+        # Validate inputs
+        if not (low <= medium <= high):
+            raise ValueError(
+                f"Triangular distribution requires low ≤ medium ≤ high. "
+                f"Got: low={low}, medium={medium}, high={high}"
+            )
+
+        return np.random.triangular(low, medium, high, size)
+
     @staticmethod
     def run_simulation(tef_params, vuln_params, loss_params, iterations=10000, dist_type='pert'):
-        """Run Monte Carlo simulation"""
-        
+        """
+        Run Monte Carlo simulation for FAIR risk analysis
+
+        Implements: ALE = TEF × Vulnerability × Loss Magnitude
+
+        Args:
+            tef_params: dict with 'low', 'medium', 'high' for TEF
+            vuln_params: dict with 'low', 'medium', 'high' for Vulnerability
+            loss_params: dict with 'low', 'medium', 'high' for Loss Magnitude
+            iterations: number of Monte Carlo iterations
+            dist_type: 'pert' or 'triangular'
+
+        Returns:
+            Dictionary with simulation results and comprehensive statistics
+        """
+
         if dist_type == 'pert':
             tef_samples = FAIRCalculator.pert_distribution(
                 tef_params['low'], tef_params['medium'], tef_params['high'], iterations
@@ -81,20 +145,24 @@ class FAIRCalculator:
             loss_samples = FAIRCalculator.pert_distribution(
                 loss_params['low'], loss_params['medium'], loss_params['high'], iterations
             )
-        else:
-            tef_samples = FAIRCalculator.uniform_distribution(
-                tef_params['low'], tef_params['high'], iterations
+        else:  # triangular
+            tef_samples = FAIRCalculator.triangular_distribution(
+                tef_params['low'], tef_params['medium'], tef_params['high'], iterations
             )
-            vuln_samples = FAIRCalculator.uniform_distribution(
-                vuln_params['low'], vuln_params['high'], iterations
+            vuln_samples = FAIRCalculator.triangular_distribution(
+                vuln_params['low'], vuln_params['medium'], vuln_params['high'], iterations
             )
-            loss_samples = FAIRCalculator.uniform_distribution(
-                loss_params['low'], loss_params['high'], iterations
+            loss_samples = FAIRCalculator.triangular_distribution(
+                loss_params['low'], loss_params['medium'], loss_params['high'], iterations
             )
-        
+
+        # FAIR Model: Calculate LEF and ALE
         lef_samples = tef_samples * vuln_samples
         ale_samples = lef_samples * loss_samples
-        
+
+        # Calculate VaR once to avoid redundant computation
+        var95_value = np.percentile(ale_samples, 95)
+
         return {
             'tef': tef_samples,
             'vuln': vuln_samples,
@@ -104,7 +172,7 @@ class FAIRCalculator:
             'stats': {
                 'mean': np.mean(ale_samples),
                 'median': np.median(ale_samples),
-                'std': np.std(ale_samples),
+                'std': np.std(ale_samples, ddof=1),  # Sample std dev
                 'min': np.min(ale_samples),
                 'max': np.max(ale_samples),
                 'p10': np.percentile(ale_samples, 10),
@@ -114,8 +182,8 @@ class FAIRCalculator:
                 'p90': np.percentile(ale_samples, 90),
                 'p95': np.percentile(ale_samples, 95),
                 'p99': np.percentile(ale_samples, 99),
-                'var95': np.percentile(ale_samples, 95),
-                'cvar95': np.mean(ale_samples[ale_samples >= np.percentile(ale_samples, 95)]),
+                'var95': var95_value,  # Value at Risk (95%)
+                'cvar95': np.mean(ale_samples[ale_samples >= var95_value]),  # Conditional VaR
                 'prob_zero': np.sum(ale_samples == 0) / len(ale_samples),
                 'prob_1m': np.sum(ale_samples > 1000000) / len(ale_samples),
                 'prob_5m': np.sum(ale_samples > 5000000) / len(ale_samples),
@@ -156,9 +224,9 @@ def main():
         
         dist_type = st.selectbox(
             "Distribution Type",
-            options=['pert', 'uniform'],
-            format_func=lambda x: 'PERT (Recommended)' if x == 'pert' else 'Uniform',
-            help="PERT distribution is recommended for more realistic risk modeling"
+            options=['pert', 'triangular'],
+            format_func=lambda x: 'PERT (Recommended)' if x == 'pert' else 'Triangular',
+            help="PERT uses Beta distribution (recommended). Triangular is simpler but uses all three parameters."
         )
         
         st.divider()

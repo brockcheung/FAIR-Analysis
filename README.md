@@ -10,17 +10,51 @@ Three powerful tools for **Factor Analysis of Information Risk (FAIR)** that let
 
 All tools are designed for **YOUR custom scenarios** - not pre-loaded data!
 
-## 🚀 Quick Start - Analyze Your Risk in 60 Seconds
+## 🚀 Installation
 
+### Quick Install (Recommended)
+
+**Linux / macOS:**
 ```bash
-# Install dependencies (one time only)
-pip install numpy pandas matplotlib seaborn plotly streamlit xlsxwriter
+./install.sh
+```
 
-# Run quick analysis - just answer the prompts!
-python quick_risk_analysis.py
+**Windows:**
+```cmd
+install.bat
+```
+
+**Or using pip:**
+```bash
+pip install -e .
+```
+
+**Or using Docker:**
+```bash
+docker-compose up
+# Visit http://localhost:8501
+```
+
+See [INSTALL.md](INSTALL.md) for detailed installation instructions.
+
+## ⚡ Quick Start - Analyze Your Risk in 60 Seconds
+
+After installation, run:
+```bash
+fair-quick
+# Or: python quick_risk_analysis.py
 ```
 
 That's it! The tool will guide you through creating your scenario and show results immediately.
+
+### Manual Installation (Alternative)
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run quick analysis
+python quick_risk_analysis.py
+```
 
 ## 📊 Three Ways to Analyze YOUR Risks
 
@@ -293,13 +327,54 @@ Having issues? Try these steps:
 3. **Start simple**: Try `quick_risk_analysis.py` first
 4. **Use defaults**: Press Enter to use default values when unsure
 
+## 📦 Packaging and Distribution
+
+This tool is available in multiple formats for easy installation and deployment:
+
+### Installation Methods
+1. **Pip Install** - `pip install -e .` (Python package)
+2. **Docker** - `docker-compose up` (Containerized)
+3. **Source** - Clone and run directly
+4. **Scripts** - One-command install scripts
+
+### Available Commands
+After pip installation:
+- `fair-quick` - Quick analysis tool
+- `fair-calc` - Full calculator
+- `fair-app` - Web application
+
+### Makefile Commands
+For convenience, use `make`:
+```bash
+make install    # Install package
+make quick      # Run quick analysis
+make app        # Run web application
+make test       # Run tests
+make docker-run # Run in Docker
+```
+
+### Documentation
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
+- **[INSTALL.md](INSTALL.md)** - Detailed installation guide
+- **[PACKAGING.md](PACKAGING.md)** - Distribution and deployment guide
+
 ## 🎯 Next Steps
 
-1. Start with ONE risk scenario using `quick_risk_analysis.py`
+1. Start with ONE risk scenario using `fair-quick`
 2. Build confidence with the estimates
 3. Add more scenarios using the full tool
 4. Compare and prioritize risks
 5. Export results for management reporting
+
+## 🧪 Testing
+
+Validate your installation:
+```bash
+# Run validation tests
+python test_validation.py
+
+# Should output: "All tests passed!"
+```
 
 ---
 

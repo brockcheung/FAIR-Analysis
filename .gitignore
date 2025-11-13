@@ -18,9 +18,12 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 venv/
@@ -34,14 +37,22 @@ env/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Test outputs
 *.log
 test_results/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
 
 # Excel and CSV outputs
 *.xlsx
@@ -53,3 +64,19 @@ test_results/
 
 # Environment variables
 .env
+.env.local
+
+# Output directories
+outputs/
+charts/
+exports/
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+.nfs*

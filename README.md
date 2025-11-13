@@ -53,43 +53,64 @@ python quick_risk_analysis.py
 
 **Commands not recognized?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for solutions.
 
-## 🔒 Security - Code Integrity Protection
+## 🔒 Security - Automatic Code Integrity Protection
 
-Protect your FAIR Risk Calculator from unauthorized modifications with built-in integrity checking:
+**🎉 NEW: Zero-setup automatic protection!** The FAIR Risk Calculator now automatically protects itself from tampering:
 
-**Quick Setup (3 minutes):**
 ```bash
-# 1. Generate cryptographic baseline
-python generate_integrity_manifest.py
+# Just run any tool - protection happens automatically!
+python quick_risk_analysis.py
 
-# 2. Verify before each use
-python verify_integrity.py
-
-# If verified successfully, safe to proceed
-fair-quick
+# First run: Auto-generates security baseline
+# Subsequent runs: Auto-verifies integrity before execution
 ```
 
-**What it does:**
+**What it does automatically:**
+- ✅ Auto-generates cryptographic baseline on first run
+- ✅ Auto-verifies integrity before each execution
 - ✅ Detects unauthorized code modifications
 - ✅ Uses SHA-256 cryptographic hashing
 - ✅ Monitors all critical calculator files
 - ✅ Protects against malicious tampering
 
 **Why it matters:**
-Risk analysis tools make critical business decisions. If an adversary modifies the code, they could manipulate calculations or inject malicious code. This system detects such tampering before execution.
+Risk analysis tools make critical business decisions. If an adversary modifies the code, they could manipulate calculations or inject malicious code. This system detects such tampering automatically before execution.
+
+**How it works:**
+
+*First Run (Any Tool):*
+```
+🔒 FIRST RUN DETECTED - Establishing Security Baseline
+   Generating cryptographic integrity baseline...
+✅ Security baseline established successfully!
+```
+
+*Subsequent Runs (Automatic):*
+```
+🔒 Security Check: ✅ PASSED - Code integrity verified
+[Tool continues normally...]
+```
+
+*If Tampering Detected:*
+```
+⚠️  SECURITY ALERT: CODE TAMPERING DETECTED!
+   Recommended actions:
+   1. If you made legitimate changes: python generate_integrity_manifest.py
+   2. If you did NOT make changes: Restore from backup
+```
 
 **Documentation:**
-- **Quick Start:** [SECURITY_QUICKSTART.md](SECURITY_QUICKSTART.md) - 3-minute setup guide
+- **Quick Start:** [SECURITY_QUICKSTART.md](SECURITY_QUICKSTART.md) - Now even simpler with automation!
 - **Full Guide:** [SECURITY.md](SECURITY.md) - Comprehensive security documentation
-- **Testing:** Run `python test_integrity_system.py` to verify the system
+- **Testing:** Run `python test_auto_integrity.py` to test the automated system
 
-**Optional Runtime Integration:**
-```python
-from integrity_checker import verify_runtime_integrity
+**Manual Control (Optional):**
+```bash
+# Generate baseline manually (optional)
+python generate_integrity_manifest.py
 
-# Check integrity at startup
-if not verify_runtime_integrity(strict=True):
-    sys.exit(1)
+# Verify manually (optional)
+python verify_integrity.py
 ```
 
 See [SECURITY.md](SECURITY.md) for detailed information on threat model, incident response, and best practices.

@@ -9,6 +9,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 import sys
+import os
+
+# Auto-integrity protection (optional - auto-generates on first run)
+try:
+    # Only import if auto_integrity.py exists
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'auto_integrity.py')):
+        from auto_integrity import ensure_integrity
+        AUTO_INTEGRITY_AVAILABLE = True
+    else:
+        AUTO_INTEGRITY_AVAILABLE = False
+except ImportError:
+    AUTO_INTEGRITY_AVAILABLE = False
 
 class QuickRiskAnalyzer:
     """
@@ -174,7 +186,13 @@ P(Loss > $5M):        {results['prob_5m']:.1%}
 
 def main():
     """Interactive quick risk assessment"""
-    
+
+    # Auto-integrity check (runs automatically on first and subsequent runs)
+    if AUTO_INTEGRITY_AVAILABLE:
+        if not ensure_integrity(auto_generate=True, strict=False, silent=False):
+            print("\n⚠️  Continuing despite integrity check failure...")
+            print("    (Results may not be trustworthy)\n")
+
     print("╔════════════════════════════════════════════════════════════╗")
     print("║              QUICK RISK ANALYSIS TOOL                      ║")
     print("╚════════════════════════════════════════════════════════════╝\n")

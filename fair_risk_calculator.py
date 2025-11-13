@@ -11,9 +11,21 @@ import seaborn as sns
 from datetime import datetime
 import json
 import argparse
+import os
 from typing import Dict, List, Tuple, Optional
 import warnings
 warnings.filterwarnings('ignore')
+
+# Auto-integrity protection (optional - auto-generates on first run)
+try:
+    # Only import if auto_integrity.py exists
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'auto_integrity.py')):
+        from auto_integrity import ensure_integrity
+        AUTO_INTEGRITY_AVAILABLE = True
+    else:
+        AUTO_INTEGRITY_AVAILABLE = False
+except ImportError:
+    AUTO_INTEGRITY_AVAILABLE = False
 
 class FAIRRiskCalculator:
     """
@@ -818,10 +830,16 @@ def main():
     parser.add_argument('--quick', action='store_true', help='Quick mode - single scenario analysis')
     
     args = parser.parse_args()
-    
+
+    # Auto-integrity check (runs automatically on first and subsequent runs)
+    if AUTO_INTEGRITY_AVAILABLE:
+        if not ensure_integrity(auto_generate=True, strict=False, silent=False):
+            print("\n⚠️  Continuing despite integrity check failure...")
+            print("    (Results may not be trustworthy)\n")
+
     # Initialize calculator
     calculator = FAIRRiskCalculator(iterations=args.iterations)
-    
+
     print("╔════════════════════════════════════════════════════════════╗")
     print("║           FAIR RISK CALCULATOR - INTERACTIVE MODE          ║")
     print("╚════════════════════════════════════════════════════════════╝")

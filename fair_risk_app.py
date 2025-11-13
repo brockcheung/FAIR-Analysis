@@ -11,9 +11,20 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import json
+import os
 from datetime import datetime
 from io import BytesIO
 import xlsxwriter
+
+# Auto-integrity protection (optional - auto-generates on first run)
+AUTO_INTEGRITY_AVAILABLE = False
+try:
+    # Only import if auto_integrity.py exists
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'auto_integrity.py')):
+        from auto_integrity import ensure_integrity
+        AUTO_INTEGRITY_AVAILABLE = True
+except ImportError:
+    pass
 
 # Page configuration
 st.set_page_config(
@@ -22,6 +33,34 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Auto-integrity check (runs once per session)
+if AUTO_INTEGRITY_AVAILABLE:
+    if 'integrity_checked' not in st.session_state:
+        st.session_state.integrity_checked = False
+
+    if not st.session_state.integrity_checked:
+        # Run integrity check
+        integrity_result = ensure_integrity(auto_generate=True, strict=False, silent=True)
+        st.session_state.integrity_checked = True
+        st.session_state.integrity_status = integrity_result
+
+        # Show result in sidebar
+        if not integrity_result:
+            st.sidebar.error("⚠️ Code Integrity Check Failed")
+            st.sidebar.warning("Results may not be trustworthy. See SECURITY.md")
+        else:
+            # Check if manifest was just generated (first run)
+            manifest_path = os.path.join(os.path.dirname(__file__), 'integrity_manifest.json')
+            if os.path.exists(manifest_path):
+                # Show success indicator in sidebar
+                with st.sidebar:
+                    st.success("🔒 Code Integrity: Verified")
+else:
+    # Integrity system not available
+    if 'integrity_checked' not in st.session_state:
+        st.session_state.integrity_checked = True
+        st.session_state.integrity_status = True
 
 # Custom CSS for better styling
 st.markdown("""

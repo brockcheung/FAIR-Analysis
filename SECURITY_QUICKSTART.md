@@ -1,10 +1,76 @@
 # Security Quick Start Guide
 
-Protect your FAIR Risk Calculator from unauthorized modifications in 3 easy steps.
+Protect your FAIR Risk Calculator from unauthorized modifications - **now fully automated!**
 
 ---
 
-## ⚡ 3-Minute Setup
+## 🎉 **NEW: Automatic Protection (Zero Setup!)**
+
+**Starting now, security is automatic!** Just run any tool and integrity protection activates:
+
+```bash
+# Run any tool - security protection happens automatically!
+python quick_risk_analysis.py
+
+# First run: Auto-generates security baseline
+# Subsequent runs: Auto-verifies integrity
+```
+
+**That's it!** No manual setup required. The system:
+- ✅ Auto-generates baseline on first run
+- ✅ Auto-verifies on every subsequent run
+- ✅ Alerts immediately if tampering detected
+- ✅ Works with CLI tools and web app
+
+---
+
+## 📋 What Happens Automatically
+
+### First Run (Any Tool)
+```
+======================================================================
+🔒 FIRST RUN DETECTED - Establishing Security Baseline
+======================================================================
+Generating cryptographic integrity baseline...
+This protects your FAIR Risk Calculator from tampering.
+
+✅ Security baseline established successfully!
+   Files monitored: 9
+   Manifest saved: integrity_manifest.json
+
+Your FAIR Risk Calculator is now protected against tampering.
+======================================================================
+```
+
+### Subsequent Runs (Every Time)
+```
+🔒 Security Check: ✅ PASSED - Code integrity verified
+
+[Tool continues normally...]
+```
+
+### If Tampering Detected
+```
+======================================================================
+⚠️  SECURITY ALERT: CODE TAMPERING DETECTED!
+======================================================================
+Details: Code tampering detected
+
+Recommended actions:
+  1. If you made legitimate changes:
+     python generate_integrity_manifest.py
+  2. If you did NOT make changes:
+     Restore from backup and investigate
+======================================================================
+```
+
+---
+
+## ⚡ Quick Start (Optional Manual Setup)
+
+**Note:** This is now optional! Automatic protection is enabled by default.
+
+If you want to manually generate the baseline before first use:
 
 ### Step 1: Generate Baseline (30 seconds)
 

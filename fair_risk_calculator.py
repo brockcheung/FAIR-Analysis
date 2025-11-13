@@ -31,7 +31,7 @@ class FAIRRiskCalculator:
         self.scenarios = []
         self.simulation_results = {}
         
-    def add_scenario(self, 
+    def add_scenario(self,
                     scenario_id: str,
                     description: str,
                     tef_low: float,
@@ -49,7 +49,7 @@ class FAIRRiskCalculator:
                     notes: str = "") -> None:
         """
         Add a risk scenario for analysis
-        
+
         Args:
             scenario_id: Unique identifier for the scenario
             description: Description of the risk scenario
@@ -66,7 +66,53 @@ class FAIRRiskCalculator:
             threat_actor: Threat actor type (optional)
             loss_effect: Type of loss effect (optional)
             notes: Additional notes (optional)
+
+        Raises:
+            ValueError: If any parameter values are not in ascending order (low <= medium <= high)
         """
+        # Validate that low <= medium <= high for all parameters
+        validation_errors = []
+
+        # Validate TEF (Threat Event Frequency)
+        if not (tef_low <= tef_medium <= tef_high):
+            validation_errors.append(
+                f"TEF values must be in ascending order (low <= medium <= high). "
+                f"Got: low={tef_low}, medium={tef_medium}, high={tef_high}"
+            )
+
+        # Validate Vulnerability
+        if not (vuln_low <= vuln_medium <= vuln_high):
+            validation_errors.append(
+                f"Vulnerability values must be in ascending order (low <= medium <= high). "
+                f"Got: low={vuln_low}, medium={vuln_medium}, high={vuln_high}"
+            )
+
+        # Validate vulnerability is between 0 and 1
+        if not (0 <= vuln_low <= 1 and 0 <= vuln_medium <= 1 and 0 <= vuln_high <= 1):
+            validation_errors.append(
+                f"Vulnerability values must be between 0 and 1. "
+                f"Got: low={vuln_low}, medium={vuln_medium}, high={vuln_high}"
+            )
+
+        # Validate Loss Magnitude
+        if not (loss_low <= loss_medium <= loss_high):
+            validation_errors.append(
+                f"Loss Magnitude values must be in ascending order (low <= medium <= high). "
+                f"Got: low=${loss_low:,.2f}, medium=${loss_medium:,.2f}, high=${loss_high:,.2f}"
+            )
+
+        # Validate non-negative values
+        if tef_low < 0 or tef_medium < 0 or tef_high < 0:
+            validation_errors.append("TEF values cannot be negative")
+
+        if loss_low < 0 or loss_medium < 0 or loss_high < 0:
+            validation_errors.append("Loss Magnitude values cannot be negative")
+
+        # If there are any validation errors, raise ValueError with all errors
+        if validation_errors:
+            error_message = f"Validation failed for scenario '{scenario_id}':\n" + "\n".join(f"  - {err}" for err in validation_errors)
+            raise ValueError(error_message)
+
         scenario = {
             'id': scenario_id,
             'description': description,
@@ -582,25 +628,40 @@ def interactive_scenario_builder():
     print("\n📊 THREAT EVENT FREQUENCY (TEF)")
     print("How many times per year could this threat occur?")
     print("Examples: Phishing (100-365), Ransomware (1-10), Insider threat (0.5-5)")
-    tef_low = get_user_input("  TEF - Low estimate", float, 0, default=1.0)
-    tef_medium = get_user_input("  TEF - Most likely", float, 0, default=3.0)
-    tef_high = get_user_input("  TEF - High estimate", float, 0, default=6.0)
-    
+    while True:
+        tef_low = get_user_input("  TEF - Low estimate", float, 0, default=1.0)
+        tef_medium = get_user_input("  TEF - Most likely", float, tef_low, default=max(3.0, tef_low))
+        tef_high = get_user_input("  TEF - High estimate", float, tef_medium, default=max(6.0, tef_medium))
+
+        if tef_low <= tef_medium <= tef_high:
+            break
+        print("⚠️  Error: TEF values must be in ascending order (low <= medium <= high). Please re-enter.")
+
     # Vulnerability
     print("\n🎯 VULNERABILITY")
     print("What's the probability (0-100%) that the threat succeeds if it occurs?")
     print("Examples: With good controls (10-30%), Average controls (30-60%), Poor controls (60-90%)")
-    vuln_low = get_user_input("  Vulnerability - Low (0-1)", float, 0, 1, default=0.2)
-    vuln_medium = get_user_input("  Vulnerability - Most likely (0-1)", float, 0, 1, default=0.5)
-    vuln_high = get_user_input("  Vulnerability - High (0-1)", float, 0, 1, default=0.85)
-    
+    while True:
+        vuln_low = get_user_input("  Vulnerability - Low (0-1)", float, 0, 1, default=0.2)
+        vuln_medium = get_user_input("  Vulnerability - Most likely (0-1)", float, vuln_low, 1, default=max(0.5, vuln_low))
+        vuln_high = get_user_input("  Vulnerability - High (0-1)", float, vuln_medium, 1, default=max(0.85, vuln_medium))
+
+        if vuln_low <= vuln_medium <= vuln_high:
+            break
+        print("⚠️  Error: Vulnerability values must be in ascending order (low <= medium <= high). Please re-enter.")
+
     # Loss Magnitude
     print("\n💰 LOSS MAGNITUDE ($)")
     print("What's the financial impact if the incident occurs?")
     print("Include: Response costs, legal fees, fines, business disruption, reputation damage")
-    loss_low = get_user_input("  Loss - Low estimate ($)", float, 0, default=500000)
-    loss_medium = get_user_input("  Loss - Most likely ($)", float, 0, default=2080000)
-    loss_high = get_user_input("  Loss - High estimate ($)", float, 0, default=3500000)
+    while True:
+        loss_low = get_user_input("  Loss - Low estimate ($)", float, 0, default=500000)
+        loss_medium = get_user_input("  Loss - Most likely ($)", float, loss_low, default=max(2080000, loss_low))
+        loss_high = get_user_input("  Loss - High estimate ($)", float, loss_medium, default=max(3500000, loss_medium))
+
+        if loss_low <= loss_medium <= loss_high:
+            break
+        print("⚠️  Error: Loss Magnitude values must be in ascending order (low <= medium <= high). Please re-enter.")
     
     # Optional Details
     print("\n📝 ADDITIONAL DETAILS (Optional - press Enter to skip)")

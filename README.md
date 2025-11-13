@@ -53,6 +53,47 @@ python quick_risk_analysis.py
 
 **Commands not recognized?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for solutions.
 
+## 🔒 Security - Code Integrity Protection
+
+Protect your FAIR Risk Calculator from unauthorized modifications with built-in integrity checking:
+
+**Quick Setup (3 minutes):**
+```bash
+# 1. Generate cryptographic baseline
+python generate_integrity_manifest.py
+
+# 2. Verify before each use
+python verify_integrity.py
+
+# If verified successfully, safe to proceed
+fair-quick
+```
+
+**What it does:**
+- ✅ Detects unauthorized code modifications
+- ✅ Uses SHA-256 cryptographic hashing
+- ✅ Monitors all critical calculator files
+- ✅ Protects against malicious tampering
+
+**Why it matters:**
+Risk analysis tools make critical business decisions. If an adversary modifies the code, they could manipulate calculations or inject malicious code. This system detects such tampering before execution.
+
+**Documentation:**
+- **Quick Start:** [SECURITY_QUICKSTART.md](SECURITY_QUICKSTART.md) - 3-minute setup guide
+- **Full Guide:** [SECURITY.md](SECURITY.md) - Comprehensive security documentation
+- **Testing:** Run `python test_integrity_system.py` to verify the system
+
+**Optional Runtime Integration:**
+```python
+from integrity_checker import verify_runtime_integrity
+
+# Check integrity at startup
+if not verify_runtime_integrity(strict=True):
+    sys.exit(1)
+```
+
+See [SECURITY.md](SECURITY.md) for detailed information on threat model, incident response, and best practices.
+
 ## ⚡ Quick Start - Analyze Your Risk in 60 Seconds
 
 After installation, run:

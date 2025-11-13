@@ -25,23 +25,51 @@ if %errorlevel% neq 0 (
     echo ================================================================
     echo.
     echo Streamlit and other dependencies are not installed yet.
+    echo This is required to run the FAIR Risk Calculator Web App.
     echo.
-    echo QUICK FIX - Run ONE of these commands:
+    echo This script can automatically install them for you now.
     echo.
-    echo Option 1 - Full Installation (Recommended):
-    echo   install.bat
+    set /p install_choice="Install dependencies now? [Y/n]: "
+
+    if /i "%install_choice%"=="n" (
+        echo.
+        echo Installation cancelled. To install manually, run:
+        echo   install.bat
+        echo.
+        pause
+        exit /b 1
+    )
+
     echo.
-    echo Option 2 - Install Dependencies Only:
-    echo   pip install -r requirements.txt
-    echo.
-    echo Option 3 - Install Just Streamlit:
-    echo   pip install streamlit
-    echo.
-    echo After installation, run this script again.
+    echo ================================================================
+    echo Installing dependencies...
     echo ================================================================
     echo.
-    pause
-    exit /b 1
+
+    REM Try to install dependencies
+    pip install -r "%~dp0requirements.txt"
+
+    if %errorlevel% neq 0 (
+        echo.
+        echo ================================================================
+        echo ERROR: Installation failed
+        echo ================================================================
+        echo.
+        echo Please try running install.bat instead, or install manually:
+        echo   pip install -r requirements.txt
+        echo.
+        pause
+        exit /b 1
+    )
+
+    echo.
+    echo ================================================================
+    echo Installation complete!
+    echo ================================================================
+    echo.
+    echo Starting the web app now...
+    echo.
+    timeout /t 2 >nul
 )
 
 REM Check if other dependencies are installed
@@ -51,16 +79,14 @@ if %errorlevel% neq 0 (
     echo WARNING: Some dependencies may be missing
     echo ================================================================
     echo.
-    echo For best results, run the full installation:
-    echo   install.bat
+    echo Installing remaining dependencies...
     echo.
-    echo Or install all dependencies:
-    echo   pip install -r requirements.txt
+
+    pip install -r "%~dp0requirements.txt" >nul 2>&1
+
+    echo Dependencies updated.
     echo.
-    echo Attempting to start anyway...
-    echo ================================================================
-    echo.
-    timeout /t 3 >nul
+    timeout /t 2 >nul
 )
 
 REM All checks passed - run the web app

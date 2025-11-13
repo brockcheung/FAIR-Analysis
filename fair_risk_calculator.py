@@ -534,11 +534,142 @@ class FAIRRiskCalculator:
         print(f"Results exported to {filename}")
 
 
+def get_user_input(prompt, input_type=str, min_val=None, max_val=None, default=None):
+    """
+    Get user input with validation
+    """
+    while True:
+        try:
+            user_input = input(f"{prompt} {f'[default: {default}]' if default else ''}: ").strip()
+            
+            if not user_input and default is not None:
+                return default
+            
+            if input_type == float:
+                value = float(user_input)
+            elif input_type == int:
+                value = int(user_input)
+            else:
+                value = user_input
+            
+            if min_val is not None and value < min_val:
+                print(f"Value must be at least {min_val}")
+                continue
+            if max_val is not None and value > max_val:
+                print(f"Value must be at most {max_val}")
+                continue
+            
+            return value
+        except ValueError:
+            print(f"Invalid input. Please enter a valid {input_type.__name__}")
+
+
+def interactive_scenario_builder():
+    """
+    Interactive wizard for building risk scenarios
+    """
+    print("\n" + "="*60)
+    print("RISK SCENARIO BUILDER")
+    print("="*60)
+    print("\nLet's build your risk scenario step by step.")
+    print("For each parameter, provide Low, Most Likely, and High estimates.\n")
+    
+    # Basic Information
+    scenario_id = get_user_input("Scenario ID (e.g., S1)", default="S1")
+    description = get_user_input("Scenario Description (e.g., 'Data Breach - Customer PII')")
+    
+    # Threat Event Frequency
+    print("\n📊 THREAT EVENT FREQUENCY (TEF)")
+    print("How many times per year could this threat occur?")
+    print("Examples: Phishing (100-365), Ransomware (1-10), Insider threat (0.5-5)")
+    tef_low = get_user_input("  TEF - Low estimate", float, 0, default=1.0)
+    tef_medium = get_user_input("  TEF - Most likely", float, 0, default=3.0)
+    tef_high = get_user_input("  TEF - High estimate", float, 0, default=6.0)
+    
+    # Vulnerability
+    print("\n🎯 VULNERABILITY")
+    print("What's the probability (0-100%) that the threat succeeds if it occurs?")
+    print("Examples: With good controls (10-30%), Average controls (30-60%), Poor controls (60-90%)")
+    vuln_low = get_user_input("  Vulnerability - Low (0-1)", float, 0, 1, default=0.2)
+    vuln_medium = get_user_input("  Vulnerability - Most likely (0-1)", float, 0, 1, default=0.5)
+    vuln_high = get_user_input("  Vulnerability - High (0-1)", float, 0, 1, default=0.85)
+    
+    # Loss Magnitude
+    print("\n💰 LOSS MAGNITUDE ($)")
+    print("What's the financial impact if the incident occurs?")
+    print("Include: Response costs, legal fees, fines, business disruption, reputation damage")
+    loss_low = get_user_input("  Loss - Low estimate ($)", float, 0, default=500000)
+    loss_medium = get_user_input("  Loss - Most likely ($)", float, 0, default=2080000)
+    loss_high = get_user_input("  Loss - High estimate ($)", float, 0, default=3500000)
+    
+    # Optional Details
+    print("\n📝 ADDITIONAL DETAILS (Optional - press Enter to skip)")
+    asset = get_user_input("Asset at risk", default="")
+    threat_actor = get_user_input("Threat actor", default="")
+    loss_effect = get_user_input("Loss effect (Confidentiality/Integrity/Availability)", default="")
+    notes = get_user_input("Notes/Assumptions", default="")
+    
+    return {
+        'scenario_id': scenario_id,
+        'description': description,
+        'tef_low': tef_low,
+        'tef_medium': tef_medium,
+        'tef_high': tef_high,
+        'vuln_low': vuln_low,
+        'vuln_medium': vuln_medium,
+        'vuln_high': vuln_high,
+        'loss_low': loss_low,
+        'loss_medium': loss_medium,
+        'loss_high': loss_high,
+        'asset': asset,
+        'threat_actor': threat_actor,
+        'loss_effect': loss_effect,
+        'notes': notes
+    }
+
+
+def display_results(results):
+    """
+    Display simulation results in a formatted way
+    """
+    stats = results['statistics']
+    
+    print("\n" + "="*60)
+    print("RISK ANALYSIS RESULTS")
+    print("="*60)
+    
+    print("\n📊 KEY METRICS")
+    print(f"  Mean Annual Loss:        ${stats['mean_loss']:,.0f}")
+    print(f"  Median Annual Loss:      ${stats['median_loss']:,.0f}")
+    print(f"  Standard Deviation:      ${stats['std_loss']:,.0f}")
+    
+    print("\n📈 PERCENTILES")
+    print(f"  10th Percentile:         ${stats['percentile_10']:,.0f}")
+    print(f"  25th Percentile:         ${stats['percentile_25']:,.0f}")
+    print(f"  50th Percentile:         ${stats['percentile_50']:,.0f}")
+    print(f"  75th Percentile:         ${stats['percentile_75']:,.0f}")
+    print(f"  90th Percentile:         ${stats['percentile_90']:,.0f}")
+    print(f"  95th Percentile (VaR):   ${stats['var_95']:,.0f}")
+    print(f"  99th Percentile:         ${stats['percentile_99']:,.0f}")
+    
+    print("\n⚠️ RISK INDICATORS")
+    print(f"  Value at Risk (95%):     ${stats['var_95']:,.0f}")
+    print(f"  Conditional VaR (95%):   ${stats['cvar_95']:,.0f}")
+    
+    print("\n📊 PROBABILITY ANALYSIS")
+    print(f"  P(Loss = $0):            {stats['probability_zero_loss']:.1%}")
+    print(f"  P(Loss > $1M):           {stats['probability_over_1m']:.1%}")
+    print(f"  P(Loss > $5M):           {stats['probability_over_5m']:.1%}")
+    print(f"  P(Loss > $10M):          {stats['probability_over_10m']:.1%}")
+    
+    print("\n" + "="*60)
+
+
 def main():
     """
-    Main function with example usage
+    Main function with interactive mode
     """
-    parser = argparse.ArgumentParser(description='FAIR Risk Calculator')
+    parser = argparse.ArgumentParser(description='FAIR Risk Calculator - Interactive Risk Assessment Tool')
     parser.add_argument('--iterations', type=int, default=10000,
                        help='Number of Monte Carlo iterations (default: 10000)')
     parser.add_argument('--distribution', choices=['pert', 'uniform'], default='pert',
@@ -546,135 +677,188 @@ def main():
     parser.add_argument('--export-excel', type=str, help='Export results to Excel file')
     parser.add_argument('--export-json', type=str, help='Export results to JSON file')
     parser.add_argument('--save-plots', type=str, help='Save plots to specified directory')
-    parser.add_argument('--demo', action='store_true', help='Run demo with sample scenarios')
+    parser.add_argument('--batch', type=str, help='Load scenarios from JSON file for batch processing')
+    parser.add_argument('--quick', action='store_true', help='Quick mode - single scenario analysis')
     
     args = parser.parse_args()
     
     # Initialize calculator
     calculator = FAIRRiskCalculator(iterations=args.iterations)
     
-    if args.demo:
-        print("Running demo with sample scenarios...")
+    print("╔════════════════════════════════════════════════════════════╗")
+    print("║           FAIR RISK CALCULATOR - INTERACTIVE MODE          ║")
+    print("╚════════════════════════════════════════════════════════════╝")
+    print(f"\nConfiguration: {args.iterations:,} iterations | {args.distribution.upper()} distribution\n")
+    
+    if args.batch:
+        # Batch mode - load scenarios from JSON file
+        try:
+            with open(args.batch, 'r') as f:
+                batch_data = json.load(f)
+                scenarios = batch_data.get('scenarios', [])
+                
+            print(f"Loading {len(scenarios)} scenarios from {args.batch}...")
+            for scenario in scenarios:
+                calculator.add_scenario(**scenario)
+                print(f"  ✓ Loaded: {scenario['scenario_id']} - {scenario['description']}")
+            
+        except Exception as e:
+            print(f"Error loading batch file: {e}")
+            return
+    
+    elif args.quick:
+        # Quick mode - single scenario
+        print("QUICK MODE - Single Scenario Analysis\n")
+        scenario_data = interactive_scenario_builder()
         
-        # Add sample scenarios based on the Excel file
-        calculator.add_scenario(
-            scenario_id="S1",
-            description="Data Breach - Customer PII",
-            tef_low=1, tef_medium=3, tef_high=6,
-            vuln_low=0.2, vuln_medium=0.5, vuln_high=0.85,
-            loss_low=500000, loss_medium=2080000, loss_high=3500000,
-            asset="Customer Database",
-            threat_actor="External Attacker",
-            loss_effect="Confidentiality",
-            notes="Based on industry breach statistics"
-        )
+        calculator.add_scenario(**scenario_data)
         
-        calculator.add_scenario(
-            scenario_id="S2",
-            description="Ransomware Attack",
-            tef_low=2, tef_medium=5, tef_high=10,
-            vuln_low=0.1, vuln_medium=0.3, vuln_high=0.6,
-            loss_low=250000, loss_medium=1500000, loss_high=5000000,
-            asset="All Systems",
-            threat_actor="Ransomware Group",
-            loss_effect="Availability",
-            notes="Including recovery and downtime costs"
-        )
+        print("\n🎲 Running simulation...")
+        results = calculator.run_simulation(scenario_data['scenario_id'], distribution=args.distribution)
         
-        calculator.add_scenario(
-            scenario_id="S3",
-            description="Insider Threat - Data Theft",
-            tef_low=0.5, tef_medium=2, tef_high=4,
-            vuln_low=0.3, vuln_medium=0.6, vuln_high=0.9,
-            loss_low=100000, loss_medium=750000, loss_high=2000000,
-            asset="Intellectual Property",
-            threat_actor="Malicious Insider",
-            loss_effect="Confidentiality",
-            notes="Deliberate data exfiltration scenario"
-        )
+        display_results(results)
         
-        calculator.add_scenario(
-            scenario_id="S4",
-            description="DDoS Attack",
-            tef_low=5, tef_medium=15, tef_high=30,
-            vuln_low=0.2, vuln_medium=0.4, vuln_high=0.7,
-            loss_low=10000, loss_medium=50000, loss_high=200000,
-            asset="Public Website",
-            threat_actor="Hacktivist",
-            loss_effect="Availability",
-            notes="Service disruption and mitigation costs"
-        )
-        
-        # Run simulations
-        print("\nRunning simulations...")
-        for scenario in calculator.scenarios:
-            print(f"  - Simulating {scenario['id']}: {scenario['description']}")
-            calculator.run_simulation(scenario['id'], distribution=args.distribution)
-        
-        # Display results
-        print("\n" + "="*80)
-        print("SIMULATION RESULTS SUMMARY")
-        print("="*80)
-        
-        summary = calculator.run_all_scenarios()
-        print(summary.to_string())
-        
-        # Create visualizations
-        print("\nGenerating visualizations...")
-        for scenario in calculator.scenarios:
+        # Ask if user wants visualization
+        if get_user_input("\nGenerate visualization? (y/n)", default="y").lower() == 'y':
             if args.save_plots:
-                save_path = f"{args.save_plots}/{scenario['id']}_analysis.png"
+                save_path = f"{args.save_plots}/{scenario_data['scenario_id']}_analysis.png"
             else:
                 save_path = None
-            calculator.create_visualizations(scenario['id'], save_path)
-        
-        # Create comparison chart
-        if args.save_plots:
-            comparison_path = f"{args.save_plots}/scenario_comparison.png"
-        else:
-            comparison_path = None
-        calculator.create_comparison_chart(comparison_path)
-        
-        # Export results if requested
-        if args.export_excel:
-            calculator.export_to_excel(args.export_excel)
-        
-        if args.export_json:
-            calculator.export_to_json(args.export_json)
+            calculator.create_visualizations(scenario_data['scenario_id'], save_path)
     
     else:
-        print("FAIR Risk Calculator initialized.")
-        print("\nTo use the calculator:")
-        print("1. Add scenarios using calculator.add_scenario()")
-        print("2. Run simulations using calculator.run_simulation(scenario_id)")
-        print("3. Create visualizations using calculator.create_visualizations(scenario_id)")
-        print("4. Export results using calculator.export_to_excel() or export_to_json()")
-        print("\nRun with --demo flag to see example usage.")
+        # Full interactive mode - multiple scenarios
+        scenarios_added = 0
         
-        # Interactive mode
-        print("\nEntering interactive mode...")
-        print("Example code to get started:")
-        print("""
-calculator = FAIRRiskCalculator(iterations=10000)
-
-# Add a scenario
-calculator.add_scenario(
-    scenario_id="S1",
-    description="Your Risk Scenario",
-    tef_low=1, tef_medium=3, tef_high=6,
-    vuln_low=0.2, vuln_medium=0.5, vuln_high=0.85,
-    loss_low=500000, loss_medium=2080000, loss_high=3500000
-)
-
-# Run simulation
-results = calculator.run_simulation("S1")
-
-# Create visualization
-calculator.create_visualizations("S1")
-
-# Export to Excel
-calculator.export_to_excel("risk_analysis.xlsx")
-        """)
+        while True:
+            print("\n" + "-"*60)
+            print("OPTIONS:")
+            print("  1. Add new risk scenario")
+            print("  2. Run simulations for all scenarios")
+            print("  3. View results")
+            print("  4. Generate visualizations")
+            print("  5. Compare scenarios")
+            print("  6. Export results")
+            print("  7. Exit")
+            print("-"*60)
+            
+            choice = get_user_input("Select option (1-7)", default="1")
+            
+            if choice == "1":
+                # Add new scenario
+                scenario_data = interactive_scenario_builder()
+                calculator.add_scenario(**scenario_data)
+                scenarios_added += 1
+                print(f"\n✓ Scenario '{scenario_data['description']}' added successfully!")
+                print(f"Total scenarios: {scenarios_added}")
+            
+            elif choice == "2":
+                # Run simulations
+                if not calculator.scenarios:
+                    print("\n⚠️ No scenarios to simulate. Please add scenarios first.")
+                else:
+                    print(f"\n🎲 Running simulations for {len(calculator.scenarios)} scenarios...")
+                    for scenario in calculator.scenarios:
+                        print(f"  - Simulating: {scenario['id']} - {scenario['description']}")
+                        calculator.run_simulation(scenario['id'], distribution=args.distribution)
+                    print("\n✓ All simulations completed!")
+            
+            elif choice == "3":
+                # View results
+                if not calculator.simulation_results:
+                    print("\n⚠️ No results available. Please run simulations first.")
+                else:
+                    print("\nAvailable results:")
+                    for i, (sid, data) in enumerate(calculator.simulation_results.items(), 1):
+                        print(f"  {i}. {sid} - {data['description']}")
+                    
+                    scenario_num = get_user_input("\nSelect scenario number to view", int, 1, len(calculator.simulation_results))
+                    selected_id = list(calculator.simulation_results.keys())[scenario_num - 1]
+                    display_results(calculator.simulation_results[selected_id])
+            
+            elif choice == "4":
+                # Generate visualizations
+                if not calculator.simulation_results:
+                    print("\n⚠️ No results to visualize. Please run simulations first.")
+                else:
+                    print("\nVisualization options:")
+                    print("  1. Individual scenario analysis")
+                    print("  2. All scenarios")
+                    
+                    viz_choice = get_user_input("Select option (1-2)", default="1")
+                    
+                    if viz_choice == "1":
+                        print("\nAvailable scenarios:")
+                        for i, (sid, data) in enumerate(calculator.simulation_results.items(), 1):
+                            print(f"  {i}. {sid} - {data['description']}")
+                        
+                        scenario_num = get_user_input("\nSelect scenario number", int, 1, len(calculator.simulation_results))
+                        selected_id = list(calculator.simulation_results.keys())[scenario_num - 1]
+                        
+                        if args.save_plots:
+                            save_path = f"{args.save_plots}/{selected_id}_analysis.png"
+                        else:
+                            save_path = None
+                        
+                        calculator.create_visualizations(selected_id, save_path)
+                    
+                    else:
+                        print("\n📊 Generating visualizations for all scenarios...")
+                        for sid in calculator.simulation_results.keys():
+                            if args.save_plots:
+                                save_path = f"{args.save_plots}/{sid}_analysis.png"
+                            else:
+                                save_path = None
+                            calculator.create_visualizations(sid, save_path)
+            
+            elif choice == "5":
+                # Compare scenarios
+                if len(calculator.simulation_results) < 2:
+                    print("\n⚠️ Need at least 2 scenarios for comparison. Please add and run more scenarios.")
+                else:
+                    print("\n📊 Generating scenario comparison...")
+                    summary = calculator.run_all_scenarios()
+                    print("\n" + "="*80)
+                    print("SCENARIO COMPARISON")
+                    print("="*80)
+                    print(summary.to_string())
+                    
+                    if args.save_plots:
+                        comparison_path = f"{args.save_plots}/scenario_comparison.png"
+                    else:
+                        comparison_path = None
+                    calculator.create_comparison_chart(comparison_path)
+            
+            elif choice == "6":
+                # Export results
+                if not calculator.simulation_results:
+                    print("\n⚠️ No results to export. Please run simulations first.")
+                else:
+                    export_choice = get_user_input("\nExport format (excel/json/both)", default="excel")
+                    
+                    if export_choice in ["excel", "both"]:
+                        filename = args.export_excel or f"risk_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                        calculator.export_to_excel(filename)
+                        print(f"✓ Exported to Excel: {filename}")
+                    
+                    if export_choice in ["json", "both"]:
+                        filename = args.export_json or f"risk_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                        calculator.export_to_json(filename)
+                        print(f"✓ Exported to JSON: {filename}")
+            
+            elif choice == "7":
+                print("\nThank you for using FAIR Risk Calculator!")
+                break
+            
+            else:
+                print("\n⚠️ Invalid option. Please select 1-7.")
+    
+    # Final export if specified
+    if calculator.simulation_results:
+        if args.export_excel and not args.quick:
+            calculator.export_to_excel(args.export_excel)
+        if args.export_json and not args.quick:
+            calculator.export_to_json(args.export_json)
 
 
 if __name__ == "__main__":

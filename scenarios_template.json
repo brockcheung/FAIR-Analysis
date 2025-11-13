@@ -1,0 +1,70 @@
+{
+  "description": "FAIR Risk Assessment Batch Template",
+  "instructions": "Fill in your risk scenarios below. Each scenario needs TEF, Vulnerability, and Loss Magnitude estimates (Low, Medium, High).",
+  "scenarios": [
+    {
+      "scenario_id": "S1",
+      "description": "Example: Data Breach - Customer PII",
+      "tef_low": 1,
+      "tef_medium": 3,
+      "tef_high": 6,
+      "vuln_low": 0.2,
+      "vuln_medium": 0.5,
+      "vuln_high": 0.85,
+      "loss_low": 500000,
+      "loss_medium": 2080000,
+      "loss_high": 3500000,
+      "asset": "Customer Database",
+      "threat_actor": "External Attacker",
+      "loss_effect": "Confidentiality",
+      "notes": "Based on industry statistics"
+    },
+    {
+      "scenario_id": "S2",
+      "description": "Your scenario here",
+      "tef_low": 0,
+      "tef_medium": 0,
+      "tef_high": 0,
+      "vuln_low": 0,
+      "vuln_medium": 0,
+      "vuln_high": 0,
+      "loss_low": 0,
+      "loss_medium": 0,
+      "loss_high": 0,
+      "asset": "",
+      "threat_actor": "",
+      "loss_effect": "",
+      "notes": ""
+    }
+  ],
+  "parameter_guidance": {
+    "threat_event_frequency": {
+      "description": "Expected number of threat attempts per year",
+      "examples": {
+        "phishing": "100-365 attempts/year",
+        "ransomware": "1-10 attempts/year",
+        "insider_threat": "0.5-5 attempts/year",
+        "ddos": "5-50 attempts/year"
+      }
+    },
+    "vulnerability": {
+      "description": "Probability (0-1) that threat succeeds when it occurs",
+      "examples": {
+        "strong_controls": "0.05-0.20 (5-20%)",
+        "average_controls": "0.20-0.60 (20-60%)",
+        "weak_controls": "0.60-0.95 (60-95%)"
+      }
+    },
+    "loss_magnitude": {
+      "description": "Total financial impact in USD when incident occurs",
+      "components": [
+        "Incident response costs",
+        "Legal and regulatory fines",
+        "Business interruption",
+        "Reputation damage",
+        "Recovery costs",
+        "Third-party liability"
+      ]
+    }
+  }
+}
